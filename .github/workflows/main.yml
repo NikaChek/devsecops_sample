@@ -73,38 +73,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
+    - name: Checkout Code
+      uses: actions/checkout@v2
 
-      - name: Create Docker Network
-        run: docker network create zap_network
+    - name: Pull PyGoat Docker Image
+      run: docker pull pygoat/pygoat:latest
 
-      - name: Pull PyGoat Docker Image
-        run: docker pull pygoat/pygoat:latest
+    - name: Run PyGoat
+      run: docker run --rm -d --network host -p 8000:8000 pygoat/pygoat:latest
 
-      - name: Run PyGoat
-        run: |
-          docker run --rm -d --network zap_network --name pygoat -p 8000:8000 pygoat/pygoat:latest
-          sleep 10 
+    - name: Perform OWASP ZAP Baseline Scan
+      run: |
+        docker run --rm --network host \
+          -v ${{ github.workspace }}:/zap/wrk:rw \
+          -t ghcr.io/zaproxy/zaproxy:weekly zap-baseline.py \
+          -t http://localhost:8000 \
+          -r /zap/wrk/zap-report.html
 
-      - name: Perform OWASP ZAP Baseline Scan
-        run: |
-          docker run --rm --network zap_network \
-            -v ${{ github.workspace }}:/zap/wrk:rw \
-            -t ghcr.io/zaproxy/zaproxy:weekly zap-baseline.py \
-            -t http://pygoat:8000 \
-            -r /zap/wrk/zap-report.html || echo "Scan failed"
+    - name: List Files in Workspace (Debugging)
+      run: ls -la ${{ github.workspace }}
 
-      - name: List Files in Workspace (Debugging)
-        run: ls -la ${{ github.workspace }}
+    - name: Upload ZAP HTML Report
+      if: success() && always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: zap-report
+        path: ${{ github.workspace }}/zap-report.html
 
-      - name: Upload ZAP HTML Report
-        if: success() && always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: zap-report
-          path: ${{ github.workspace }}/zap-report.html
-
-      - name: Tear Down PyGoat
-        run: docker stop pygoat
+    - name: Tear Down PyGoat
+      run: docker stop $(docker ps -q -f "name=pygoat")
 
