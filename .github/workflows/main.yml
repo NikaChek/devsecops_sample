@@ -69,31 +69,29 @@ jobs:
        path: scout-report.sarif
        
  dast_scan:
-  name: Perform DAST Scan
-  runs-on: ubuntu-latest
+   name: Perform DAST Scan
+   runs-on: ubuntu-latest
 
-  steps:
-    - name: Checkout Code
-      uses: actions/checkout@v2
+   steps:
+     - name: Checkout Code
+       uses: actions/checkout@v2
 
-    - name: Pull PyGoat Docker Image
-      run: docker pull pygoat/pygoat:latest
+     - name: Pull PyGoat Docker Image
+       run: docker pull pygoat/pygoat:latest
 
-    - name: Run PyGoat
-      run: docker run --rm -d -p 8000:8000 pygoat/pygoat:latest
+     - name: Run PyGoat
+       run: |
+         docker run --rm -d -p 8000:8000 --name pygoat pygoat/pygoat:latest
 
-    - name: OWASP ZAP Baseline Scan
-      run: |
-        docker run --rm -v $(pwd):/zap/wrk:rw -t owasp/zap2docker-stable zap-baseline.py \
-          -t http://localhost:8000 \
-          -r zap-report.html
+     - name: Perform OWASP ZAP Baseline Scan
+       run: |
+         docker run --rm -v $(pwd):/zap/wrk:rw -t ghcr.io/zaproxy/zaproxy:weekly zap-baseline.py \
+           -t http://host.docker.internal:8000 \
+           -r zap-report.html
 
-    - name: Upload ZAP HTML Report
-      uses: actions/upload-artifact@v3
-      with:
-        name: zap-report
-        path: zap-report.html
-
-    - name: Tear Down PyGoat
-      run: docker stop pygoat
+     - name: Upload ZAP HTML Report
+       uses: actions/upload-artifact@v3
+       with:
+         name: zap-report
+         path: zap-report.html
 
