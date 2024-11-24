@@ -85,7 +85,7 @@ jobs:
     - name: Run PyGoat
       run: |
         docker run --rm -d --network zap_network --name pygoat -p 8000:8000 pygoat/pygoat:latest
-        sleep 10  
+        sleep 10  # Ensure PyGoat is fully initialized
 
     - name: Perform OWASP ZAP Baseline Scan
       run: |
@@ -106,9 +106,11 @@ jobs:
         path: ${{ github.workspace }}/zap-report.html
 
     - name: Tear Down PyGoat
-      run: docker stop pygoat
-
-
-    - name: Tear Down PyGoat
-      run: docker stop $(docker ps -q -f "name=pygoat")
+      run: |
+        container_id=$(docker ps -q -f "name=pygoat")
+        if [ -n "$container_id" ]; then
+          docker stop "$container_id"
+        else
+          echo "PyGoat container is not running."
+        fi
 
