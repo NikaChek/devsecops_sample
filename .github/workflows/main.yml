@@ -79,10 +79,14 @@ jobs:
     - name: Pull PyGoat Docker Image
       run: docker pull pygoat/pygoat:latest
 
-    - name: Run PyGoat
-      run: |
-        docker run --rm -d --network host --name pygoat -p 8000:8000 pygoat/pygoat:latest
-        sleep 10  # Wait for PyGoat to initialize
+    - name: PyGoat
+      run: docker run --rm -d -p 8000:8000 pygoat/pygoat:latest
+
+    - name: Pull ZAP Image
+      run: docker pull ghcr.io/zaproxy/zaproxy:weekly
+
+    - name: ZAP 
+      run: python3 zap-baseline.py -d -t http://localhost:8000 -r zap-report.html
 
     - name: Perform OWASP ZAP Baseline Scan
       run: |
