@@ -79,11 +79,20 @@ jobs:
   - name: Pull PyGoat Docker Image
     run: docker pull pygoat/pygoat:latest
 
+  - name: Wait 1
+    run: sleep 100
+
   - name: Start PyGoat
     run: docker run --rm -d --name pygoat -p 8000:8000 pygoat/pygoat:latest
 
+  - name: Wait 2
+    run: sleep 100
+
   - name: Pull ZAP Image
     run: docker pull ghcr.io/zaproxy/zaproxy:weekly
+
+  - name: Wait 3
+    run: sleep 100
 
   - name: Correct permission
     run: sudo chmod -R 777 ${{ github.workspace }}
