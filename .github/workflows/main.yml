@@ -73,40 +73,35 @@ jobs:
   runs-on: ubuntu-latest
 
   steps:
-    - name: Checkout Code
-      uses: actions/checkout@v2
+  - name: Checkout Code
+    uses: actions/checkout@v2
 
-    - name: Pull PyGoat Docker Image
-      run: docker pull pygoat/pygoat:latest
+  - name: Pull PyGoat Docker Image
+    run: docker pull pygoat/pygoat:latest
 
-    - name: PyGoat
-      run: docker run --rm -d -p 8000:8000 pygoat/pygoat:latest
+  - name: Start PyGoat
+    run: docker run --rm -d --name pygoat -p 8000:8000 pygoat/pygoat:latest
 
-    - name: Pull ZAP Image
-      run: docker pull ghcr.io/zaproxy/zaproxy:weekly
+  - name: Pull ZAP Image
+    run: docker pull ghcr.io/zaproxy/zaproxy:weekly
 
-    - name: ZAP 
-      run: python3 zap-baseline.py -d -t http://localhost:8000 -r zap-report.html
+  - name: Perform OWASP ZAP Baseline Scan
+    run: |
+      docker run --rm --network host \
+        -v ${{ github.workspace }}:/zap/wrk:rw \
+        -t ghcr.io/zaproxy/zaproxy:weekly zap-baseline.py \
+        -t http://localhost:8000 \
+        -r /zap/wrk/zap-report.html || echo "Have some problems"
 
-    - name: Perform OWASP ZAP Baseline Scan
-      run: |
-        docker run --rm --network host \
-          -v ${{ github.workspace }}:/zap/wrk:rw \
-          -t ghcr.io/zaproxy/zaproxy:weekly zap-baseline.py \
-          -t http://localhost:8000 \
-          -r zap-report.html || echo "Have some problems"
+  - name: List Files in Workspace (Debugging)
+    run: ls -la ${{ github.workspace }}
 
-    - name: List Files in Workspace (Debugging)
-      run: ls -la ${{ github.workspace }}
+  - name: Upload ZAP HTML Report
+    if: always()
+    uses: actions/upload-artifact@v3
+    with:
+      name: zap-report
+      path: ${{ github.workspace }}/zap-report.html
 
-    - name: Upload ZAP HTML Report
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: zap-report
-        path: ${{ github.workspace }}/zap-report.html
-
-    - name: Tear Down PyGoat
-      run: docker stop pygoat || echo "PyGoat container not running"
-
-
+  - name: Tear Down PyGoat
+    run: docker stop pygoat || echo "PyGoat container not running"
