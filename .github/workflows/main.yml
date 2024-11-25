@@ -88,10 +88,9 @@ jobs:
       run: |
         docker run --rm --network zap_network \
           -v ${{ github.workspace }}/scripts:/zap/scripts:rw \
-          -t ghcr.io/zaproxy/zaproxy:weekly \
-          python /zap/scripts/zap-baseline.py \
+          -t ghcr.io/zaproxy/zaproxy:weekly zap-baseline.py \
           -t http://pygoat:8000 \
-          -r /zap/wrk/zap-report.html || echo "Scan failed"
+          -r /zap/wrk/zap-report.html || echo "Have some problems"
 
     - name: List Files in Workspace (Debugging)
       run: ls -la ${{ github.workspace }}
