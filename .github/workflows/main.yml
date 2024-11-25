@@ -99,7 +99,7 @@ jobs:
     run: |
       docker run --rm --network host \
         -v ${{ github.workspace }}:/zap/wrk:rw \
-        -t ghcr.io/zaproxy/zaproxy:weekly /bin/bash -c "mkdir -p /zap/wrk && zap-baseline.py -t http://localhost:8000 -r /zap/wrk/zap-report.html" \
+        -t ghcr.io/zaproxy/zaproxy:weekly /bin/bash -c "mkdir -p /zap/wrk && zap-baseline.py -t http://localhost:8000 -r zap-report.html" \
         || echo "Have some problems"
 
   - name: List Files in Workspace (Debugging)
