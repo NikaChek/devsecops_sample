@@ -85,6 +85,9 @@ jobs:
   - name: Pull ZAP Image
     run: docker pull ghcr.io/zaproxy/zaproxy:weekly
 
+  - name: Correct permission
+    run: sudo chmod -R 777 ${{ github.workspace }}
+
   - name: Perform OWASP ZAP Baseline Scan
     run: |
       docker run --rm --network host \
