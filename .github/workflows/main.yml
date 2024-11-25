@@ -76,42 +76,33 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v2
 
-    - name: Create Docker Network
-      run: docker network create zap_network
-
     - name: Pull PyGoat Docker Image
       run: docker pull pygoat/pygoat:latest
 
     - name: Run PyGoat
       run: |
-        docker run --rm -d --network zap_network --name pygoat -p 8000:8000 pygoat/pygoat:latest
-        sleep 10  # Ensure PyGoat is fully initialized
+        docker run --rm -d --network host --name pygoat -p 8000:8000 pygoat/pygoat:latest
+        sleep 10  # Wait for PyGoat to initialize
 
     - name: Perform OWASP ZAP Baseline Scan
       run: |
-        docker run --rm --network zap_network \
+        docker run --rm --network host \
           -v ${{ github.workspace }}:/zap/wrk:rw \
           -t ghcr.io/zaproxy/zaproxy:weekly zap-baseline.py \
-          -t http://pygoat:8000 \
+          -t http://localhost:8000 \
           -r /zap/wrk/zap-report.html || echo "Have some problems"
-        docker logs zap-baseline.py
 
     - name: List Files in Workspace (Debugging)
       run: ls -la ${{ github.workspace }}
 
     - name: Upload ZAP HTML Report
-      if: success() && always()
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: zap-report
         path: ${{ github.workspace }}/zap-report.html
 
     - name: Tear Down PyGoat
-      run: |
-        container_id=$(docker ps -q -f "name=pygoat")
-        if [ -n "$container_id" ]; then
-          docker stop "$container_id"
-        else
-          echo "PyGoat container is not running."
-        fi
+      run: docker stop pygoat || echo "PyGoat container not running"
+
 
