@@ -1,5 +1,6 @@
 name: CI
 
+
 # triggers pipeline when push is made to any branch (typical CI pipeline rule)
 on: [push]
 
